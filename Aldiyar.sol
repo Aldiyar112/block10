@@ -1,0 +1,149 @@
+pragma solidity ^0.4.24;
+ 
+//Safe Math Interface
+ 
+contract SafeMath {
+ 
+    function safeAdd(uint a, uint b) public pure returns (uint c) {
+        c = a + b;
+        require(c >= a);
+    }
+ 
+    function safeSub(uint a, uint b) public pure returns (uint c) {
+        require(b <= a);
+        c = a - b;
+    }
+ 
+    function safeMul(uint a, uint b) public pure returns (uint c) {
+        c = a * b;
+        require(a == 0 || c / a == b);
+    }
+ 
+    function safeDiv(uint a, uint b) public pure returns (uint c) {
+        require(b > 0);
+        c = a / b;
+    }
+}
+ 
+ 
+//ERC Token Standard #20 Interface
+ 
+contract ERC20Interface {
+    function totalSupply() public constant returns (uint);
+    function balanceOf(address tokenOwner) public constant returns (uint balance);
+    function allowance(address tokenOwner, address spender) public constant returns (uint remaining);
+    function transfer(address to, uint tokens) public returns (bool success);
+    function approve(address spender, uint tokens) public returns (bool success);
+    function transferFrom(address from, address to, uint tokens) public returns (bool success);
+ 
+    event Transfer(address indexed from, address indexed to, uint tokens);
+    event Approval(address indexed tokenOwner, address indexed spender, uint tokens);
+}
+ 
+ 
+//Contract function to receive approval and execute function in one call
+ 
+contract ApproveAndCallFallBack {
+    function receiveApproval(address from, uint256 tokens, address token, bytes data) public;
+}
+ 
+//Actual token contract
+ 
+contract QKCToken is ERC20Interface, SafeMath {
+    string public symbol;
+    string public  name;
+    uint8 public decimals;
+    uint public _totalSupply;
+ 
+    mapping(address => uint) balances;
+    mapping(address => mapping(address => uint)) allowed;
+ 
+    constructor() public {
+        symbol = "QKC";
+        name = "QuikNode Coin";
+        decimals = 2;
+        _totalSupply = 100000;
+        balances[YOUR_METAMASK_WALLET_ADDRESS] = _totalSupply;
+        emit Transfer(address(0), YOUR_METAMASK_WALLET_ADDRESS, _totalSupply);
+    }
+ 
+    function totalSupply() public constant returns (uint) {
+        return _totalSupply  - balances[address(0)];
+    }
+ 
+    function balanceOf(address tokenOwner) public constant returns (uint balance) {
+// SPDX-License-Identifier: MIT
+
+pragma solidity ^0.8.0;
+
+interface IERC20 {
+
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    function transfer(address recipient, uint256 amount) external returns (bool);
+    function approve(address spender, uint256 amount) external returns (bool);
+    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+
+
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+
+contract CAA is IERC20 {
+
+    string public constant name = "CAA";
+    string public constant symbol = "CAA";
+    uint8 public constant decimals = 4;
+
+
+    mapping(address => uint256) balances;
+
+    mapping(address => mapping (address => uint256)) allowed;
+
+    uint256 totalSupply_ = 10000*(10*decimals);
+
+
+   constructor() {
+    balances[msg.sender] = totalSupply_;
+    }
+
+    function totalSupply() public override view returns (uint256) {
+    return totalSupply_;
+    }
+
+    function balanceOf(address tokenOwner) public override view returns (uint256) {
+        return balances[tokenOwner];
+    }
+
+    function transfer(address receiver, uint256 numTokens) public override returns (bool) {
+        require(numTokens <= balances[msg.sender]);
+        balances[msg.sender] = balances[msg.sender]-numTokens;
+        balances[receiver] = balances[receiver]+numTokens;
+        emit Transfer(msg.sender, receiver, numTokens);
+        return true;
+    }
+
+    function approve(address delegate, uint256 numTokens) public override returns (bool) {
+        allowed[msg.sender][delegate] = numTokens;
+        emit Approval(msg.sender, delegate, numTokens);
+        return true;
+    }
+
+    function allowance(address owner, address delegate) public override view returns (uint) {
+        return allowed[owner][delegate];
+    }
+
+    function transferFrom(address owner, address buyer, uint256 numTokens) public override returns (bool) {
+        require(numTokens <= balances[owner]);
+        require(numTokens <= allowed[owner][msg.sender]);
+
+        balances[owner] = balances[owner]-numTokens;
+        allowed[owner][msg.sender] = allowed[owner][msg.sender]-numTokens;
+        balances[buyer] = balances[buyer]+numTokens;
+        emit Transfer(owner, buyer, numTokens);
+        return true;
+    }
+}
